@@ -9,6 +9,7 @@ import {
   RGBLuminanceSource
 } from '@zxing/library';
 import delay from 'delay';
+import p from '@silvia-odwyer/photon-node';
 
 export default async function scan({url}) {
   const image = await Jimp.read({url});
