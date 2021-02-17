@@ -1,12 +1,10 @@
 /*!
  * Copyright (c) 2021 Digital Bazaar, Inc. All rights reserved.
  */
-// import Jimp from 'jimp/es'
 import {
   PDF417Reader,
   BinaryBitmap,
   HybridBinarizer,
-  RGBLuminanceSource,
   HTMLCanvasElementLuminanceSource
 } from '@zxing/library';
 import delay from 'delay';
@@ -20,9 +18,6 @@ export default async function scan({url}) {
   canvas.height = img.height;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0);
-  // ctx.filter = 'grayscale(100)';
-  // const image = await Jimp.read({url});
-  // image.grayscale();
   return await findPoints({canvas});
 }
 
@@ -43,22 +38,42 @@ async function getImage({url}) {
 
 async function findPoints({canvas}) {
   if(canvas.width > 3000) {
-    throw new Error('SCALE NOT IMPLEMENTED');
+    console.log('SCALE NOT IMPLEMENTED');
     // image.resize(2000, Jimp.AUTO, Jimp.RESIZE_BICUBIC);
   }
 
-  const rotations = [0, 180, 90, 180];
+  const rotations = [0, 90, 180, 270];
   for(const rotation of rotations) {
-    console.log('TTTTTTTT', rotation);
+    await delay(100);
+    let rotateCanvas = canvas;
     if(rotation > 0) {
-      const ctx = canvas.getContext('2d');
+      // rotateCanvas = document.getElementById('myCanvas');
+      rotateCanvas = document.createElement('canvas');
+      if(rotation === 90 || rotation === 270) {
+        rotateCanvas.width = canvas.height;
+        rotateCanvas.height = canvas.width;
+      } else {
+        rotateCanvas.width = canvas.width;
+        rotateCanvas.height = canvas.height;
+      }
+      const ctx = rotateCanvas.getContext('2d');
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+      ctx.fillRect(0, 0, rotateCanvas.width, rotateCanvas.height);
+      ctx.translate(cx, cy);
       ctx.rotate(rotation * DEGREE_TO_RADIANS);
+      if(rotation === 90) {
+        ctx.translate(-canvas.height / 2, -canvas.width);
+      } else if(rotation === 270) {
+        ctx.translate(-canvas.width / 4, -canvas.width / 2);
+      } else {
+        ctx.translate(-cx, -cy);
+      }
+      ctx.drawImage(canvas, 0, 0);
     }
-    const canvasClone = cloneCanvas(canvas);
-    for(let contrast = 100; contrast <= 120; contrast += 1) {
-      // const ctx = canvasClone.getContext('2d');
+    const canvasClone = cloneCanvas(rotateCanvas);
+    for(let contrast = 100; contrast <= 120; contrast += 2) {
       const c = contrast / 100;
-      console.log('CCCCCC', c);
       const newCanvas = document.createElement('canvas');
       newCanvas.width = canvasClone.width;
       newCanvas.height = canvasClone.height;
@@ -68,7 +83,6 @@ async function findPoints({canvas}) {
       // image.contrast(contrast);
       const result = await tryImage({canvas: newCanvas});
       if(result && result.points[0] && !result.points[0].includes(null)) {
-        console.log('111111111');
         const processedPoints = await processPoints(
           {canvas: newCanvas, result});
         if(processedPoints) {
@@ -152,7 +166,6 @@ async function decodeImage({canvas}) {
         const binaryBitmap = new BinaryBitmap(new HybridBinarizer(
           luminanceSource));
         const r = await PDF417Reader.decode(binaryBitmap);
-        console.log('RRRRRRRRRRRRR', r);
         return r;
       })(),
       delay(5),
@@ -181,24 +194,4 @@ async function tryImage({canvas}) {
     console.error(`Detection Error: ${e.toString()}`);
   }
   return result;
-}
-
-function computePixels({image}) {
-  const pixels = [];
-
-  for(let p = 0; p < image.bitmap.width * image.bitmap.height * 4; p += 4) {
-    const r = image.bitmap.data[p];
-    const g = image.bitmap.data[p + 1];
-    const b = image.bitmap.data[p + 2];
-    const a = image.bitmap.data[p + 3];
-
-    let rgba = r;
-    rgba = (rgba << 8) + g;
-    rgba = (rgba << 8) + b;
-    rgba = (rgba << 8) + a;
-
-    pixels.push(rgba);
-  }
-
-  return pixels;
 }
