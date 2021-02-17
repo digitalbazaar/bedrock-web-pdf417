@@ -86,6 +86,8 @@ async function findPoints({canvas}) {
         const processedPoints = await processPoints(
           {canvas: newCanvas, result});
         if(processedPoints) {
+          // enable to display successfully scanned canvas
+          // document.body.appendChild(newCanvas);
           return processedPoints;
         }
         continue;
