@@ -8,83 +8,52 @@ import {
   HTMLCanvasElementLuminanceSource
 } from '@zxing/library';
 import delay from 'delay';
+import {fabric} from 'fabric';
 
 const DEGREE_TO_RADIANS = Math.PI / 180;
 
 export default async function scan({url}) {
-  const img = await getImage({url});
-  const canvas = document.createElement('canvas');
-  canvas.width = img.width;
-  canvas.height = img.height;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0);
-  return await findPoints({canvas});
+  const p = new Promise(resolve => fabric.Image.fromURL(url, resolve));
+  const fabricImage = await p;
+  return await findPoints({fabricImage});
 }
 
-async function getImage({url}) {
-  const reader = new FileReader();
-  const p = new Promise((resolve, reject) => {
-    reader.onloadend = () => resolve(reader.result);
-    reader.onerror = reject;
-  });
-  const i = await fetch(url);
-  reader.readAsDataURL(await i.blob());
-  const imageData = await p;
-  const img = new Image();
-  img.src = imageData;
+async function findPoints({fabricImage}) {
+  // if(fabricImage.width > 3000) {
+  //   console.log('SCALE NOT IMPLEMENTED');
+  //   // image.resize(2000, Jimp.AUTO, Jimp.RESIZE_BICUBIC);
+  // }
 
-  return img;
-}
-
-async function findPoints({canvas}) {
-  if(canvas.width > 3000) {
-    console.log('SCALE NOT IMPLEMENTED');
-    // image.resize(2000, Jimp.AUTO, Jimp.RESIZE_BICUBIC);
-  }
-
-  const rotations = [0, 90, 180, 270];
+  const rotations = [0];
   for(const rotation of rotations) {
     await delay(100);
-    let rotateCanvas = canvas;
+    // let rotateCanvas = canvas;
     if(rotation > 0) {
-      // rotateCanvas = document.getElementById('myCanvas');
-      rotateCanvas = document.createElement('canvas');
-      if(rotation === 90 || rotation === 270) {
-        rotateCanvas.width = canvas.height;
-        rotateCanvas.height = canvas.width;
-      } else {
-        rotateCanvas.width = canvas.width;
-        rotateCanvas.height = canvas.height;
-      }
-      const ctx = rotateCanvas.getContext('2d');
-      const cx = canvas.width / 2;
-      const cy = canvas.height / 2;
-      ctx.fillRect(0, 0, rotateCanvas.width, rotateCanvas.height);
-      ctx.translate(cx, cy);
-      ctx.rotate(rotation * DEGREE_TO_RADIANS);
-      if(rotation === 90) {
-        ctx.translate(-canvas.height / 2, -canvas.width);
-      } else if(rotation === 270) {
-        ctx.translate(-canvas.width / 4, -canvas.width / 2);
-      } else {
-        ctx.translate(-cx, -cy);
-      }
-      ctx.drawImage(canvas, 0, 0);
+      fabricImage.rotate(rotation);
     }
-    const canvasClone = cloneCanvas(rotateCanvas);
-    for(let contrast = 100; contrast <= 120; contrast += 2) {
+    // const canvasClone = cloneCanvas(rotateCanvas);
+    for(let contrast = 0; contrast <= 20; contrast += 1) {
+      const p = new Promise(resolve => fabricImage.clone(resolve));
+      const imageClone = await p;
       const c = contrast / 100;
-      const newCanvas = document.createElement('canvas');
-      newCanvas.width = canvasClone.width;
-      newCanvas.height = canvasClone.height;
-      const ctx2 = newCanvas.getContext('2d');
-      ctx2.filter = `contrast(${c})`;
-      ctx2.drawImage(canvasClone, 0, 0);
-      // image.contrast(contrast);
-      const result = await tryImage({canvas: newCanvas});
+      console.log('CONTRAST', c);
+      // imageClone.filters.push(new fabric.Image.filters.Grayscale('lightness'));
+      const filter = new fabric.Image.filters.Contrast({
+        contrast: c
+      });
+      imageClone.filters.push(filter);
+      imageClone.applyFilters();
+      // imageClone.scaleToWidth(2000);
+      const canvas = new fabric.Canvas('c');
+      canvas.setDimensions({
+        width: imageClone.width, height: imageClone.height
+      });
+      canvas.add(imageClone);
+
+      const result = await tryImage({canvas: canvas.toCanvasElement()});
       if(result && result.points[0] && !result.points[0].includes(null)) {
         const processedPoints = await processPoints(
-          {canvas: newCanvas, result});
+          {canvas: canvas.toCanvasElement(), result});
         if(processedPoints) {
           // enable to display successfully scanned canvas
           // document.body.appendChild(newCanvas);
@@ -95,23 +64,6 @@ async function findPoints({canvas}) {
     }
   }
   throw new Error('Scanning Error');
-}
-
-function cloneCanvas(oldCanvas) {
-
-    //create a new canvas
-    var newCanvas = document.createElement('canvas');
-    var context = newCanvas.getContext('2d');
-
-    //set dimensions
-    newCanvas.width = oldCanvas.width;
-    newCanvas.height = oldCanvas.height;
-
-    //apply the old canvas to the new one
-    context.drawImage(oldCanvas, 0, 0);
-
-    //return the new canvas
-    return newCanvas;
 }
 
 async function processPoints({canvas, result}) {
@@ -190,7 +142,7 @@ async function tryImage({canvas}) {
         const r = await PDF417Reader.detect(binaryBitmap);
         return r;
       })(),
-      delay(5),
+      delay(50),
     ]);
   } catch(e) {
     console.error(`Detection Error: ${e.toString()}`);
