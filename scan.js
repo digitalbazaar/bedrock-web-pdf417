@@ -13,7 +13,7 @@ import delay from 'delay';
 export default async function scan({url}) {
   const image = await Jimp.read({url});
   image.grayscale();
-  return await findPoints({image});
+  return findPoints({image});
 }
 
 async function findPoints({image}) {
