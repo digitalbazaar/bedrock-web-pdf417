@@ -72,15 +72,20 @@ export default async function scan({url}) {
 
 async function _getImage({url}) {
   const reader = new FileReader();
-  const p = new Promise((resolve, reject) => {
+  const blobRead = new Promise((resolve, reject) => {
     reader.onloadend = () => resolve(reader.result);
     reader.onerror = reject;
   });
   const response = await fetch(url);
   reader.readAsDataURL(await response.blob());
-  const imageData = await p;
+  const imageData = await blobRead;
   const image = new Image();
+  const imageLoaded = new Promise((resolve, reject) => {
+    image.onload = () => resolve();
+    image.onerror = reject;
+  });
   image.src = imageData;
+  await imageLoaded;
   return image;
 }
 
