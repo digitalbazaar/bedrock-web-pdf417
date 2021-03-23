@@ -36,14 +36,13 @@ export default async function scan({url}) {
   const highWidth = Math.min(image.width - 11, 2000);
   const lowWidth = Math.min(image.width / 2, 1000);
 
-  // create widths to scale the image to by incrementally adding two pixels to
+  // create widths to scale the image by incrementally adding two pixels to
   // the width that defines each band; this increases the likelihood that the
   // scaling algorithm will flip pixels in the barcode and yield a success
   const widths = [highWidth, lowWidth];
   for(let i = 0, hw = highWidth + 2, lw = lowWidth + 2;
     i < 5; ++i, ++hw, ++lw) {
-    widths.push(hw);
-    widths.push(lw);
+    widths.push(hw, lw);
   }
 
   let err;
