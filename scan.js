@@ -12,10 +12,10 @@ import {
 } from '@zxing/library';
 import delay from 'delay';
 
-// default timeout is 16 ms because it is the amount of time a single frame
+// one frame is 16 ms because it is the amount of time a single frame
 // would be rendered in a 60 frames/sec video, i.e., it should not be
 // perceptible to a human
-const DEFAULT_TIMEOUT = 16;
+const ONE_FRAME_MS = 16;
 // for converting degrees to radians for rotation
 const RADIANS_PER_DEGREE = Math.PI / 180;
 // number of pixels to allow around a detected PDF417 barcode bounding box
@@ -23,6 +23,7 @@ const BOX_ERROR = 50;
 
 export default async function scan({url}) {
   const image = await _getImage({url});
+  await delay(ONE_FRAME_MS);
 
   // create working square canvas with max width/height to enable rotation of
   // images within it
@@ -63,6 +64,8 @@ export default async function scan({url}) {
       } catch(e) {
         err = e;
       }
+
+      await delay(ONE_FRAME_MS);
     }
   }
   if(err) {
@@ -143,7 +146,7 @@ async function _decode({canvas}) {
   return PDF417Reader.decode(binaryBitmap, hints);
 }
 
-async function _decodeWithTimeout({canvas, timeout = DEFAULT_TIMEOUT}) {
+async function _decodeWithTimeout({canvas, timeout = ONE_FRAME_MS}) {
   return Promise.race([_decode({canvas}), delay(timeout)]);
 }
 
@@ -161,7 +164,7 @@ async function _detect({canvas}) {
   return null;
 }
 
-async function _detectWithTimeout({canvas, timeout = DEFAULT_TIMEOUT}) {
+async function _detectWithTimeout({canvas, timeout = ONE_FRAME_MS}) {
   return Promise.race([_detect({canvas}), delay(timeout)]);
 }
 
