@@ -27,7 +27,10 @@ export default async function scan({url}) {
 
   // create working square canvas with max width/height to enable rotation of
   // images within it
-  const canvas = document.createElement('canvas');
+  let canvas = document.createElement('canvas');
+  if(canvas.transferControlToOffscreen) {
+    canvas = canvas.transferControlToOffscreen();
+  }
   const dimension = Math.max(image.width, image.height);
   canvas.width = canvas.height = dimension;
   // enable image smoothing as it seems to improve scan success rate
@@ -125,7 +128,10 @@ function _crop({canvas, result}) {
   const width = right - left;
 
   // write the contents of bounding box to a new canvas
-  const destCanvas = document.createElement('canvas');
+  let destCanvas = document.createElement('canvas');
+  if(destCanvas.transferControlToOffscreen) {
+    destCanvas = destCanvas.transferControlToOffscreen();
+  }
   destCanvas.width = width;
   destCanvas.height = height;
   destCanvas.getContext('2d').drawImage(
