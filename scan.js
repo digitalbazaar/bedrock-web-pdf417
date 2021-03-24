@@ -4,7 +4,9 @@
 /* eslint-env browser */
 import {
   PDF417Reader,
+  BarcodeFormat,
   BinaryBitmap,
+  DecodeHintType,
   HybridBinarizer,
   HTMLCanvasElementLuminanceSource
 } from '@zxing/library';
@@ -46,7 +48,7 @@ export default async function scan({url}) {
   }
 
   let err;
-  const rotations = [0, 90];
+  const rotations = [0, 90, 270];
   for(const rotation of rotations) {
     for(const width of widths) {
       // render the image with the given width and rotation
@@ -135,7 +137,10 @@ function _crop({canvas, result}) {
 async function _decode({canvas}) {
   const luminanceSource = new HTMLCanvasElementLuminanceSource(canvas);
   const binaryBitmap = new BinaryBitmap(new HybridBinarizer(luminanceSource));
-  return PDF417Reader.decode(binaryBitmap);
+  const formats = [BarcodeFormat.PDF_417];
+  const hints = new Map();
+  hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
+  return PDF417Reader.decode(binaryBitmap, hints);
 }
 
 async function _decodeWithTimeout({canvas, timeout = DEFAULT_TIMEOUT}) {
@@ -145,7 +150,10 @@ async function _decodeWithTimeout({canvas, timeout = DEFAULT_TIMEOUT}) {
 async function _detect({canvas}) {
   const luminanceSource = new HTMLCanvasElementLuminanceSource(canvas);
   const binaryBitmap = new BinaryBitmap(new HybridBinarizer(luminanceSource));
-  const result = await PDF417Reader.detect(binaryBitmap);
+  const formats = [BarcodeFormat.PDF_417];
+  const hints = new Map();
+  hints.set(DecodeHintType.POSSIBLE_FORMATS, formats);
+  const result = await PDF417Reader.detect(binaryBitmap, hints);
   if(result && result.points[0] && !result.points[0].includes(null)) {
     return result;
   }
