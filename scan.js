@@ -157,7 +157,7 @@ async function _detectWithTimeout({canvas, timeout = DEFAULT_TIMEOUT}) {
   return Promise.race([_detect({canvas}), delay(timeout)]);
 }
 
-async function _render({canvas, image, width, rotation}) {
+function _render({canvas, image, width, rotation}) {
   // reset 2d transform and clear canvas
   const ctx = canvas.getContext('2d');
   ctx.setTransform(1, 0, 0, 1, 0, 0);
