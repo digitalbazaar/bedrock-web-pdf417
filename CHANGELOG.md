@@ -1,5 +1,8 @@
 # bedrock-web-pdf417 ChangeLog
 
+## 2.0.2 - 2021-03-25
+- Redo failed 2.0.1 release.
+
 ## 2.0.1 - 2021-03-25
 - Redo failed 2.0.0 release.
 
