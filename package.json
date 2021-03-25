@@ -18,7 +18,7 @@
     "test-node": "cross-env NODE_ENV=test mocha -r esm --preserve-symlinks -t 30000 -A -R ${REPORTER:-spec} --require tests/test-mocha.js tests/*.spec.js"
   },
   "dependencies": {
-    "@zxing/library": "mattcollier/zxing-library",
+    "@zxing/library": "digitalbazaar/zxing-library",
     "delay": "^5.0.0",
     "esm": "^3.2.25"
   },
