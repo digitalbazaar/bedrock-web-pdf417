@@ -1,7 +1,6 @@
 /*!
  * Copyright (c) 2021 Digital Bazaar, Inc. All rights reserved.
  */
-/* eslint-env browser */
 import {
   PDF417Reader,
   BarcodeFormat,
