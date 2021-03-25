@@ -1,7 +1,8 @@
 module.exports = {
   root: true,
-  extends: ['eslint-config-digitalbazaar'],
+  extends: ['digitalbazaar'],
   env: {
+    browser: true,
     node: true
   },
   parserOptions: {
