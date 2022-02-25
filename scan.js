@@ -1,5 +1,5 @@
 /*!
- * Copyright (c) 2021 Digital Bazaar, Inc. All rights reserved.
+ * Copyright (c) 2021-2022 Digital Bazaar, Inc. All rights reserved.
  */
 import {
   PDF417Reader,
@@ -92,6 +92,16 @@ async function _getBarcode({canvas}) {
     return null;
   }
 
+  // native detector has already parsed the barcode
+  if(result.barcode) {
+    // normalize (somewhat) to zxing results
+    return {
+      text: result.barcode.rawValue,
+      resultPoints: result.points,
+      barcode
+    };
+  }
+
   // crop barcode and decode it
   const croppedImage = _crop({canvas, result});
   const decoded = await _decodeWithTimeout({canvas: croppedImage});
@@ -142,6 +152,32 @@ async function _decodeWithTimeout({canvas, timeout = ONE_FRAME_MS}) {
 }
 
 async function _detect({canvas}) {
+  if(globalThis.BarcodeDetector) {
+    try {
+      // attempt native scan
+      const barcodeDetector = new BarcodeDetector({formats: ['pdf417']});
+      const [barcode] = await barcodeDetector.detect(canvas);
+      if(barcode) {
+        // normalize to zxing results
+        const {boundingBox} = barcode;
+        const points = [[
+          // top-left
+          {x: boundingBox.left, y: boundingBox.top},
+          // bottom-left
+          {x: boundingBox.left, y: boundingBox.bottom},
+          // top-right
+          {x: boundingBox.right, y: boundingBox.top},
+          // bottom-right
+          {x: boundingBox.right, y: boundingBox.bottom}
+        ]];
+        return {result: points, barcode};
+      }
+    } catch(e) {
+      // log, but ignore error, try non-native detection
+      console.log('Native barcode detection failed', e);
+    }
+  }
+
   const luminanceSource = new HTMLCanvasElementLuminanceSource(canvas);
   const binaryBitmap = new BinaryBitmap(new HybridBinarizer(luminanceSource));
   const formats = [BarcodeFormat.PDF_417];
