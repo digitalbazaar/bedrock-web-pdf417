@@ -1,5 +1,10 @@
 # bedrock-web-pdf417 ChangeLog
 
+## 3.1.0 - 2022-02-xx
+
+### Added
+- Add native barcode detector code path.
+
 ## 3.0.0 - 2021-04-12
 
 ### Changed
